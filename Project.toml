@@ -1,0 +1,13 @@
+name = "JVM"
+uuid = "36b7d5c4-f50b-446e-abc9-8540d2f632b9"
+authors = ["i"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1.10"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
