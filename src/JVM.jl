@@ -4,6 +4,14 @@ using ZMQ
 
 export JVMStruct, startjvm, eval!, readjvmbuffer!, restartjvm!, closejvm!
 
+"""
+    JVMStruct
+
+Mutable handle to an isolated Julia process (the "virtual machine").
+
+Contains the ZMQ sockets, output buffers, background tasks and the underlying
+`Base.Process`. Created by [`startjvm`](@ref).
+"""
 mutable struct JVMStruct
     path::String
     insocket::Socket
@@ -17,6 +25,12 @@ mutable struct JVMStruct
     process::Base.Process
 end
 
+"""
+    closejvm!(jvm::JVMStruct)
+
+Close the ZMQ sockets belonging to `jvm`. Does not kill the process;
+call `kill(jvm.process)` yourself when you are finished.
+"""
 function closejvm!(jvm::JVMStruct)
     ZMQ.close(jvm.insocket)
     ZMQ.close(jvm.outsocket)
@@ -72,6 +86,15 @@ function jvmsend(redirect, io, socket)
     close(socket)
 end
 
+"""
+    startjvm(path::AbstractString) -> JVMStruct
+
+Start a new isolated Julia process whose working directory is `path`.
+
+The child is launched with the same project environment as the caller
+(`Base.active_project()`). Returns a [`JVMStruct`](@ref) that can be used with
+[`eval!`](@ref), [`readjvmbuffer!`](@ref), etc.
+"""
 function startjvm(path)
     ctx = Context()
     inpath = "ipc://$(tempname())"
@@ -93,6 +116,18 @@ function startjvm(path)
     JVMStruct(path, insocket, outsocket, errsocket, intask, outtask, errtask, outbuffer, errbuffer, process)
 end
 
+"""
+    eval!(jvm::JVMStruct, code::AbstractString) -> String
+
+Evaluate `code` inside the isolated process.
+
+Returns `"OK"` on success or `"ERROR"` on failure.
+Printed output and the `show` representation of a non-`nothing` result are
+pushed into `jvm.outbuffer`. Errors go into `jvm.errbuffer`.
+
+If the process has already died, it is automatically restarted before the
+evaluation.
+"""
 function eval!(jvm::JVMStruct, code)
     if !process_running(jvm.process)
         restartjvm!(jvm)
@@ -108,12 +143,24 @@ function receivetobuffer!(socket, buffer)
     end
 end
 
+"""
+    readjvmbuffer!(buffer::Vector{String}) -> String
+
+Drain and return the contents of a buffer (normally `jvm.outbuffer` or
+`jvm.errbuffer`), then empty it.
+"""
 function readjvmbuffer!(buffer)
     result = join(buffer)
     empty!(buffer)
     result
 end
 
+"""
+    restartjvm!(jvm::JVMStruct) -> JVMStruct
+
+Kill the current process (if still running) and start a fresh one in the same
+working directory. The `JVMStruct` is updated in-place.
+"""
 function restartjvm!(jvm::JVMStruct)
     if process_running(jvm.process)
         kill(jvm.process)

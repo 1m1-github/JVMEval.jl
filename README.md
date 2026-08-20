@@ -5,17 +5,15 @@
 [![Build Status](https://github.com/1m1-github/JVM.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/1m1-github/JVM.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/1m1-github/JVM.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/1m1-github/JVM.jl)
 
-## About
+Julia Virtual Machine — run Julia code in an isolated separate process with automatic restart on crash.
 
-Julia Virtual Machine: run Julia code in an isolated separate process with automatic restart on crash.
-
-Uses ZMQ for transfer. Captures stdout and stderr into buffers. Designed for reliable isolated evaluation (agents, untrusted snippets, crash-prone computations).
+Uses ZMQ for IPC. Captures stdout and stderr into buffers. Designed for reliable isolated evaluation (agents, untrusted snippets, crash-prone computations).
 
 ## Installation
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/1m1-github/JVM.jl")
+Pkg.add("JVM")
 ```
 
 Or develop locally after cloning.
@@ -53,4 +51,10 @@ The child process is started with the same project as the parent (`Base.active_p
 
 - Minimal surface: string code in, status + captured streams out.
 - Automatic restart on process death.
-- See also RemoteREPL.jl, DaemonMode.jl and Distributed.jl for related but different goals.
+
+## See also
+
+- [RemoteREPL.jl](https://github.com/JuliaWeb/RemoteREPL.jl) — interactive remote REPL with SSH support and variable transfer
+- [DaemonMode.jl](https://github.com/dmolina/DaemonMode.jl) — persistent daemon for fast repeated script / expression evaluation
+- [CodeEvaluation.jl](https://github.com/JuliaDocs/CodeEvaluation.jl) — same-process clean `Main`-like evaluation
+- [Distributed.jl](https://docs.julialang.org/en/v1/manual/distributed-computing/) (stdlib) — full multi-process / cluster computing
