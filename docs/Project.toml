@@ -1,3 +1,6 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 JVMEval = "36b7d5c4-f50b-446e-abc9-8540d2f632b9"
+
+[compat]
+Documenter = "1.17.0"
