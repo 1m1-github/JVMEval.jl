@@ -26,24 +26,19 @@ using JVM
 path = mktempdir()          # working directory for the VM
 jvm = startjvm(path)
 
-status = eval!(jvm, "x = 40 + 2")
-# "OK"
-
-sleep(0.1)
-out = readjvmbuffer!(jvm.outbuffer)
-# contains the printed representation of the result
-
-status = eval!(jvm, "println(\"hello\")")
-out = readjvmbuffer!(jvm.outbuffer)
+status = eval!(jvm, "x = 40 + 2") # "ok"
+out = readjvmbuffer!(jvm.outbuffer) # "42\n"
 
 # if the process dies, the next eval! restarts it automatically
-# or call restartjvm!(jvm) yourself
+run(`kill $(getpid(jvm.process))`)
 
-closejvm!(jvm)
-kill(jvm.process)           # when finished
+status = eval!(jvm, "println(\"hello\")") # "ok"
+out = readjvmbuffer!(jvm.outbuffer) # "hello\n"
+
+closejvm!(jvm) # closes the ZMQ sockets and kills the Julia process
 ```
 
-`eval!` returns `"OK"` or `"ERROR"`. Printed output and `show` of non-nothing results go into the outbuffer (and errors into errbuffer). Use `readjvmbuffer!` to drain them.
+`eval!` returns `"ok"` or `"error"`. Printed output and `show` of non-nothing results go into the outbuffer (and errors into errbuffer). Use `readjvmbuffer!` to drain them.
 
 The child process is started with the same project as the parent (`Base.active_project()`), so packages available in the current environment are available inside the VM.
 

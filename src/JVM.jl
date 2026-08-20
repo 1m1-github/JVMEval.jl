@@ -28,13 +28,23 @@ end
 """
     closejvm!(jvm::JVMStruct)
 
-Close the ZMQ sockets belonging to `jvm`. Does not kill the process;
-call `kill(jvm.process)` yourself when you are finished.
+Close the ZMQ sockets belonging to `jvm`.
 """
 function closejvm!(jvm::JVMStruct)
     ZMQ.close(jvm.insocket)
     ZMQ.close(jvm.outsocket)
     ZMQ.close(jvm.errsocket)
+    killjvm!(jvm)
+end
+
+function killjvm!(jvm::JVMStruct)
+    if process_running(jvm.process)
+        kill(jvm.process)
+        if timedwait(() -> !process_running(jvm.process), 1.0) ≠ :ok
+            kill(jvm.process, Base.SIGKILL)
+        end
+        wait(jvm.process)
+    end
 end
 
 function initjvm(path, inpath, outpath, errpath)
@@ -64,10 +74,10 @@ function receiveandeval(socket)
             end
             flush(stdout)
             Base.Libc.flush_cstdio()
-            ZMQ.send(socket, "OK")
+            ZMQ.send(socket, "ok")
         catch e
             @error e
-            ZMQ.send(socket, "ERROR")
+            ZMQ.send(socket, "error")
         end
     end
 end
@@ -155,12 +165,6 @@ function readjvmbuffer!(buffer)
     result
 end
 
-"""
-    restartjvm!(jvm::JVMStruct) -> JVMStruct
-
-Kill the current process (if still running) and start a fresh one in the same
-working directory. The `JVMStruct` is updated in-place.
-"""
 function restartjvm!(jvm::JVMStruct)
     if process_running(jvm.process)
         kill(jvm.process)
