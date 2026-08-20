@@ -1,9 +1,9 @@
-# JVM.jl
+# JVMEval.jl
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://1m1-github.github.io/JVM.jl/stable/)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://1m1-github.github.io/JVM.jl/dev/)
-[![Build Status](https://github.com/1m1-github/JVM.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/1m1-github/JVM.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/1m1-github/JVM.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/1m1-github/JVM.jl)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://1m1-github.github.io/JVMEval.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://1m1-github.github.io/JVMEval.jl/dev/)
+[![Build Status](https://github.com/1m1-github/JVMEval.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/1m1-github/JVMEval.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/1m1-github/JVMEval.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/1m1-github/JVMEval.jl)
 
 Julia Virtual Machine — run Julia code in an isolated separate process with automatic restart on crash.
 
@@ -13,7 +13,7 @@ Uses ZMQ for IPC. Captures stdout and stderr into buffers. Designed for reliable
 
 ```julia
 using Pkg
-Pkg.add("JVM")
+Pkg.add("JVMEval")
 ```
 
 Or develop locally after cloning.
@@ -21,19 +21,19 @@ Or develop locally after cloning.
 ## Usage
 
 ```julia
-using JVM
+using JVMEval
 
 path = mktempdir()          # working directory for the VM
 jvm = startjvm(path)
 
 status = eval!(jvm, "x = 40 + 2") # "ok"
-out = readjvmbuffer!(jvm.outbuffer) # "42\n"
+out = readjvmstdout!(jvm) # "42\n"
 
 # if the process dies, the next eval! restarts it automatically
 run(`kill $(getpid(jvm.process))`)
 
 status = eval!(jvm, "println(\"hello\")") # "ok"
-out = readjvmbuffer!(jvm.outbuffer) # "hello\n"
+out = readjvmstdout!(jvm) # "hello\n"
 
 closejvm!(jvm) # closes the ZMQ sockets and kills the Julia process
 ```

@@ -1,14 +1,14 @@
-using JVM
+using JVMEval
 using Documenter
 
-DocMeta.setdocmeta!(JVM, :DocTestSetup, :(using JVM); recursive=true)
+DocMeta.setdocmeta!(JVMEval, :DocTestSetup, :(using JVMEval); recursive=true)
 
 makedocs(;
-    modules=[JVM],
+    modules=[JVMEval],
     authors="i",
-    sitename="JVM.jl",
+    sitename="JVMEval.jl",
     format=Documenter.HTML(;
-        canonical="https://1m1-github.github.io/JVM.jl",
+        canonical="https://1m1-github.github.io/JVMEval.jl",
         edit_link="main",
         assets=String[],
     ),
@@ -18,6 +18,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/1m1-github/JVM.jl",
+    repo="github.com/1m1-github/JVMEval.jl",
     devbranch="main",
 )

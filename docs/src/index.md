@@ -1,14 +1,14 @@
 ```@meta
-CurrentModule = JVM
+CurrentModule = JVMEval
 ```
 
-# JVM
+# JVMEval
 
-Documentation for [JVM](https://github.com/1m1-github/JVM.jl).
+Documentation for [JVMEval](https://github.com/1m1-github/JVMEval.jl).
 
 ```@index
 ```
 
 ```@autodocs
-Modules = [JVM]
+Modules = [JVMEval]
 ```

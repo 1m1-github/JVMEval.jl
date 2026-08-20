@@ -67,6 +67,6 @@ jobs:
         shell: julia --project=docs --color=yes {0}
         run: |
           using Documenter: DocMeta, doctest
-          using JVM
-          DocMeta.setdocmeta!(JVM, :DocTestSetup, :(using JVM); recursive=true)
-          doctest(JVM)
+          using JVMEval
+          DocMeta.setdocmeta!(JVMEval, :DocTestSetup, :(using JVMEval); recursive=true)
+          doctest(JVMEval)

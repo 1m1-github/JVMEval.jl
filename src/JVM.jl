@@ -1,4 +1,4 @@
-module JVM
+module JVMEval
 
 using ZMQ
 
@@ -97,23 +97,23 @@ function jvmsend(redirect, io, socket)
 end
 
 """
-    startjvm(path::AbstractString) -> JVMStruct
+    startjvm(path = mktempdir()) -> JVMStruct
 
-Start a new isolated Julia process whose working directory is `path`.
+Start a new isolated Julia process whose working directory is a tmp dir.
 
 The child is launched with the same project environment as the caller
 (`Base.active_project()`). Returns a [`JVMStruct`](@ref) that can be used with
 [`eval!`](@ref), [`readjvmbuffer!`](@ref), etc.
 """
-function startjvm(path)
+function startjvm(path = mktempdir())
     ctx = Context()
-    inpath = "ipc://$(tempname())"
+    inpath = "ipc://$(tempname(path))"
     insocket = Socket(ctx, REQ)
     bind(insocket, inpath)
-    outpath = "ipc://$(tempname())"
+    outpath = "ipc://$(tempname(path))"
     outsocket = Socket(ctx, PULL)
     bind(outsocket, outpath)
-    errpath = "ipc://$(tempname())"
+    errpath = "ipc://$(tempname(path))"
     errsocket = Socket(ctx, PULL)
     bind(errsocket, errpath)
     project = Base.active_project()
@@ -131,7 +131,7 @@ end
 
 Evaluate `code` inside the isolated process.
 
-Returns `"OK"` on success or `"ERROR"` on failure.
+Returns `"ok"` on success or `"error"` on failure.
 Printed output and the `show` representation of a non-`nothing` result are
 pushed into `jvm.outbuffer`. Errors go into `jvm.errbuffer`.
 
@@ -164,6 +164,24 @@ function readjvmbuffer!(buffer)
     empty!(buffer)
     result
 end
+
+function readjvmbuffer!(buffer)
+    result = join(buffer)
+    empty!(buffer)
+    result
+end
+"""
+    readjvmstdout!(jvm::JVMStruct) -> String
+
+Drain and return the contents of the jvm stdout buffer, then empty it.
+"""
+readjvmstdout!(jvm::JVMStruct) = readjvmbuffer!(jvm.outbuffer)
+"""
+    readjvmstderr!(jvm::JVMStruct) -> String
+
+Drain and return the contents of the jvm stderr buffer, then empty it.
+"""
+readjvmstderr!(jvm::JVMStruct) = readjvmbuffer!(jvm.errbuffer)
 
 function restartjvm!(jvm::JVMStruct)
     if process_running(jvm.process)
