@@ -91,6 +91,7 @@ function readjvmbuffer!(buffer)
     empty!(buffer)
     result
 end
+
 """
     readjvmstdout!(jvm::JVMStruct) -> String
 
@@ -126,7 +127,7 @@ Start a new isolated Julia process whose working directory is a tmp dir.
 
 The child is launched with the same project environment as the caller
 (`Base.active_project()`). Returns a [`JVMStruct`](@ref) that can be used with
-[`eval!`](@ref), [`readjvmbuffer!`](@ref), etc.
+[`eval!`](@ref), [`readjvmstdout!`](@ref), [`readjvmstderr!`](@ref), etc.
 """
 function startjvm(path = mktempdir())
     ctx = Context()
