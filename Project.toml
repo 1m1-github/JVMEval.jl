@@ -1,6 +1,6 @@
 name = "JVMEval"
 uuid = "8b5df349-bf38-4cca-a77f-77b65244730f"
-version = "0.2.0"
+version = "0.1.0"
 authors = ["i"]
 
 [deps]
