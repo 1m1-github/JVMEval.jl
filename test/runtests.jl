@@ -5,22 +5,17 @@ using JVMEval
     jvm = startjvm()
     try
         @test process_running(jvm.process)
-        status = eval!(jvm, "1 + 1")
-        @test status == "ok"
+        out = eval!(jvm, "1 + 1")
+        @test out == "2"
+        out = eval!(jvm, "println(\"hello from jvm\")")
+        @test isempty(out)
         sleep(0.2)
-        out = readjvmstdout!(jvm)
-        @test occursin("2", out)
-        status = eval!(jvm, "println(\"hello from jvm\")")
-        @test status == "ok"
-        sleep(0.2)
-        out = readjvmstdout!(jvm)
-        @test occursin("hello from jvm", out)
+        out = readstdout!(jvm)
+        @test out == "hello from jvm\n"
         JVMEval.restartjvm!(jvm)
         @test process_running(jvm.process)
-        status = eval!(jvm, "2 + 2")
-        out = readjvmstdout!(jvm)
-        @test status == "ok"
-        @test occursin("4", out)
+        out = eval!(jvm, "2 + 2")
+        @test out == "4"
     finally
         closejvm!(jvm)
         rm(jvm.path; recursive=true, force=true)

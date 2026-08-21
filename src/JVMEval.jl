@@ -2,7 +2,7 @@ module JVMEval
 
 using ZMQ
 
-export JVMStruct, startjvm, eval!, readjvmstdout!, readjvmstderr!, closejvm!
+export JVMStruct, startjvm, eval!, readstdout!, readstderr!, closejvm!
 
 """
     JVMStruct
@@ -51,13 +51,7 @@ function receiveandeval(socket)
         code = ZMQ.recv(socket, String)
         try
             result = eval(Meta.parseall(code))
-            if !isnothing(result)
-                show(stdout, "text/plain", result)
-                println()
-            end
-            flush(stdout)
-            Base.Libc.flush_cstdio()
-            ZMQ.send(socket, "ok")
+            ZMQ.send(socket, isnothing(result) ? "" : string(result))
         catch e
             @error e
             ZMQ.send(socket, "error")
@@ -86,24 +80,24 @@ function receivetobuffer!(socket, buffer)
     end
 end
 
-function readjvmbuffer!(buffer)
+function readbuffer!(buffer)
     result = join(buffer)
     empty!(buffer)
     result
 end
 
 """
-    readjvmstdout!(jvm::JVMStruct) -> String
+    readstdout!(jvm::JVMStruct) -> String
 
 Drain and return the contents of the jvm stdout buffer, then empty it.
 """
-readjvmstdout!(jvm::JVMStruct) = readjvmbuffer!(jvm.outbuffer)
+readstdout!(jvm::JVMStruct) = readbuffer!(jvm.outbuffer)
 """
-    readjvmstderr!(jvm::JVMStruct) -> String
+    readstderr!(jvm::JVMStruct) -> String
 
 Drain and return the contents of the jvm stderr buffer, then empty it.
 """
-readjvmstderr!(jvm::JVMStruct) = readjvmbuffer!(jvm.errbuffer)
+readstderr!(jvm::JVMStruct) = readbuffer!(jvm.errbuffer)
 
 function initjvm(path, inpath, outpath, errpath)
     cd(path)
@@ -127,7 +121,7 @@ Start a new isolated Julia process whose working directory is a tmp dir.
 
 The child is launched with the same project environment as the caller
 (`Base.active_project()`). Returns a [`JVMStruct`](@ref) that can be used with
-[`eval!`](@ref), [`readjvmstdout!`](@ref), [`readjvmstderr!`](@ref), etc.
+[`eval!`](@ref), [`readstdout!`](@ref), [`readstderr!`](@ref), etc.
 """
 function startjvm(path = mktempdir())
     ctx = Context()

@@ -23,22 +23,20 @@ Or develop locally after cloning.
 ```julia
 using JVMEval
 
-path = mktempdir()          # working directory for the VM
-jvm = startjvm(path)
+jvm = startjvm()
 
-status = eval!(jvm, "x = 40 + 2") # "ok"
-out = readjvmstdout!(jvm) # "42\n"
+out = eval!(jvm, "x = 40 + 2") # 42
 
 # if the process dies, the next eval! restarts it automatically
 run(`kill $(getpid(jvm.process))`)
 
-status = eval!(jvm, "println(\"hello\")") # "ok"
-out = readjvmstdout!(jvm) # "hello\n"
+eval!(jvm, "println(\"hello\")") # ""
+out = readstdout!(jvm) # "hello\n"
 
 closejvm!(jvm) # closes the ZMQ sockets and kills the Julia process
 ```
 
-`eval!` returns `"ok"` or `"error"`. Printed output and `show` of non-nothing results go into the outbuffer (and errors into errbuffer). Use `readjvmbuffer!` to drain them.
+`eval!(jvm, code)` returns `string(eval(Meta.parseall(code)))` or `"error"`. Printed output goes into the outbuffer (and errors into errbuffer). Use `readstdout!` and `readstderr!` to drain them.
 
 The child process is started with the same project as the parent (`Base.active_project()`), so packages available in the current environment are available inside the VM.
 
