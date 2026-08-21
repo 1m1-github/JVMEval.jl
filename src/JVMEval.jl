@@ -1,8 +1,10 @@
 module JVMEval
 
-using ZMQ
+using ZMQ, Serialization
 
-export JVMStruct, startjvm, eval!, readstdout!, readstderr!, closejvm!
+export startjvm, eval!, readstdout!, readstderr!, closejvm!, restartjvm!
+
+const NOK = "__DATATYPE_UNKWOWN_TO_LOOPOS_JVM__"
 
 """
     JVMStruct
@@ -26,13 +28,12 @@ mutable struct JVMStruct
 end
 
 """
-    eval!(jvm::JVMStruct, code::AbstractString) -> String
+    eval!(jvm::JVMStruct, code::AbstractString) -> Any
 
 Evaluate `code` inside the isolated process.
 
-Returns `"ok"` on success or `"error"` on failure.
-Printed output and the `show` representation of a non-`nothing` result are
-pushed into `jvm.outbuffer`. Errors go into `jvm.errbuffer`.
+Returns the eval result xor its string representation on success xor the error xor its string representation on failure.
+Printed output is pushed into `jvm.outbuffer`. Errors go into `jvm.errbuffer`.
 
 If the process has already died, it is automatically restarted before the
 evaluation.
@@ -42,20 +43,28 @@ function eval!(jvm::JVMStruct, code)
         restartjvm!(jvm)
     end
     ZMQ.send(jvm.insocket, String(code))
-    String(ZMQ.recv(jvm.insocket))
+    message = ZMQ.recv(jvm.insocket)
+    buffer = IOBuffer(message)
+    try 
+        deserialize(buffer)
+    catch _
+        NOK
+    end
 end
 
 function receiveandeval(socket)
     while true
         yield()
         code = ZMQ.recv(socket, String)
-        try
-            result = eval(Meta.parseall(code))
-            ZMQ.send(socket, isnothing(result) ? "" : string(result))
+        result = try
+            Base.invokelatest(Core.eval, Main, Meta.parseall(code))
         catch e
             @error e
-            ZMQ.send(socket, "error")
+            e
         end
+        buffer = IOBuffer()
+        serialize(buffer, result)
+        ZMQ.send(socket, take!(buffer))
     end
 end
 
@@ -85,7 +94,6 @@ function readbuffer!(buffer)
     empty!(buffer)
     result
 end
-
 """
     readstdout!(jvm::JVMStruct) -> String
 
@@ -144,21 +152,27 @@ function startjvm(path = mktempdir())
     JVMStruct(path, insocket, outsocket, errsocket, intask, outtask, errtask, outbuffer, errbuffer, process)
 end
 
+"""
+    restartjvm!(jvm::JVMStruct) -> JVMStruct
+
+Kill the current process (if still running) and start a fresh one in the same
+working directory. The `JVMStruct` is updated in-place.
+"""
 function restartjvm!(jvm::JVMStruct)
     if process_running(jvm.process)
         kill(jvm.process)
     end
     closejvm!(jvm)
-    new = startjvm(jvm.path)
-    jvm.insocket = new.insocket
-    jvm.outsocket = new.outsocket
-    jvm.errsocket = new.errsocket
-    jvm.intask = new.intask
-    jvm.outtask = new.outtask
-    jvm.errtask = new.errtask
-    jvm.outbuffer = new.outbuffer
-    jvm.errbuffer = new.errbuffer
-    jvm.process = new.process
+    newjvm = startjvm(jvm.path)
+    jvm.insocket = newjvm.insocket
+    jvm.outsocket = newjvm.outsocket
+    jvm.errsocket = newjvm.errsocket
+    jvm.intask = newjvm.intask
+    jvm.outtask = newjvm.outtask
+    jvm.errtask = newjvm.errtask
+    jvm.outbuffer = newjvm.outbuffer
+    jvm.errbuffer = newjvm.errbuffer
+    jvm.process = newjvm.process
     jvm
 end
 

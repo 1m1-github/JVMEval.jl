@@ -1,12 +1,14 @@
 name = "JVMEval"
 uuid = "8b5df349-bf38-4cca-a77f-77b65244730f"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["i"]
 
 [deps]
+Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 ZMQ = "c2297ded-f4af-51ae-bb23-16f91089e4e1"
 
 [compat]
+Serialization = "1.11.0"
 ZMQ = "1.5.1"
 julia = "1.10"
 
